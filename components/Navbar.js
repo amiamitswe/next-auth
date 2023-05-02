@@ -1,20 +1,21 @@
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
+import React, { useState } from "react";
 import { Dialog } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
-import { signIn, signOut } from "next-auth/react";
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Blog", href: "/blog" },
-  // { name: 'Marketplace', href: '#' },
-  // { name: 'Company', href: '#' },
-];
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
+
+  const navigation = [
+    { name: "Dashboard", href: "/dashboard", secure: true },
+    { name: "Blog", href: "/blog" },
+    // { name: 'Marketplace', href: '#' },
+    // { name: 'Company', href: '#' },
+  ];
 
   return (
     <header className="bg-white">
@@ -43,23 +44,59 @@ export default function Navbar() {
           </button>
         </div>
         <div className="hidden lg:flex lg:gap-x-12">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="text-sm font-semibold leading-6 text-gray-900"
-            >
-              {item.name}
-            </Link>
+          {navigation.map((item, index) => (
+            <React.Fragment key={index}>
+              {item.secure ? (
+                <>
+                  {session && status === "authenticated" && (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="text-sm font-semibold leading-6 text-gray-900"
+                    >
+                      {item.name}
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-sm font-semibold leading-6 text-gray-900"
+                >
+                  {item.name}
+                </Link>
+              )}
+            </React.Fragment>
           ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link
-            href="#"
-            className="text-sm font-semibold leading-6 text-gray-900"
-          >
-            Log in <span aria-hidden="true">&rarr;</span>
-          </Link>
+          {session && status === "authenticated" && (
+            <Link
+              onClick={(e) => {
+                e.preventDefault();
+                signOut();
+              }}
+              href="/api/auth/signout"
+              className="text-sm font-semibold leading-6 text-red-600"
+            >
+              Log out
+            </Link>
+          )}
+
+          {!session &&
+            (status === "unauthenticated" || status === "loading") && (
+              <Link
+                onClick={(e) => {
+                  e.preventDefault();
+                  signIn("github");
+                }}
+                href="/api/auth/signin"
+                className="text-sm font-semibold leading-6 text-gray-900"
+              >
+                Log in <span aria-hidden="true">&rarr;</span>
+              </Link>
+            )}
         </div>
       </nav>
       <Dialog
@@ -91,37 +128,59 @@ export default function Navbar() {
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-gray-500/10">
               <div className="space-y-2 py-6">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                  >
-                    {item.name}
-                  </Link>
+                {navigation.map((item, index) => (
+                  <React.Fragment key={index}>
+                    {item.secure ? (
+                      <>
+                        {session && status === "authenticated" && (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                          >
+                            {item.name}
+                          </Link>
+                        )}
+                      </>
+                    ) : (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                      >
+                        {item.name}
+                      </Link>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
               <div className="py-6">
-                <Link
-                  onClick={(e) => {
-                    e.preventDefault();
-                    signIn('github');
-                  }}
-                  href="/api/auth/signin"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                >
-                  Log in
-                </Link>
-                <Link
-                  onClick={(e) => {
-                    e.preventDefault();
-                    signOut();
-                  }}
-                  href="/api/auth/signout"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-red-700 hover:bg-gray-50"
-                >
-                  Log out
-                </Link>
+                {session && status === "authenticated" && (
+                  <Link
+                    onClick={(e) => {
+                      e.preventDefault();
+                      signOut();
+                    }}
+                    href="/api/auth/signout"
+                    className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-red-700 hover:bg-gray-50"
+                  >
+                    Log out
+                  </Link>
+                )}
+
+                {!session &&
+                  (status === "unauthenticated" || status === "loading") && (
+                    <Link
+                      onClick={(e) => {
+                        e.preventDefault();
+                        signIn("github");
+                      }}
+                      href="/api/auth/signin"
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                    >
+                      Log in
+                    </Link>
+                  )}
               </div>
             </div>
           </div>
